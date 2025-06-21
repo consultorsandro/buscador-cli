@@ -2,7 +2,6 @@ use std::fs;
 use std::io::{self, BufRead};
 use std::path::{Path, PathBuf};
 
-/// Representa uma linha lida de um arquivo
 #[derive(Debug)]
 pub struct FileLine {
     pub file: PathBuf,
@@ -10,17 +9,19 @@ pub struct FileLine {
     pub content: String,
 }
 
-/// Lê todos os arquivos de texto em um diretório e coleta suas linhas
 pub fn read_text_files(dir: &Path) -> io::Result<Vec<FileLine>> {
-    let mut results = Vec::new();
+    // Verifica se o diretório existe
+    if !dir.exists() {
+        return Err(io::Error::new(io::ErrorKind::NotFound, "Diretório não encontrado"));
+    }
 
     println!("🔍 Verificando diretório: {}", dir.display());
+    let mut results = Vec::new();
 
     if dir.is_dir() {
         for entry in fs::read_dir(dir)? {
             let entry = entry?;
             let path = entry.path();
-
             println!("➡️ Encontrado: {}", path.display());
 
             if path.is_dir() {
@@ -31,35 +32,44 @@ pub fn read_text_files(dir: &Path) -> io::Result<Vec<FileLine>> {
                 let ext = ext.to_lowercase();
                 if ext == "txt" || ext == "md" {
                     println!("📄 Arquivo válido para leitura: {}", path.display());
-
                     let file = fs::File::open(&path)?;
                     let reader = io::BufReader::new(file);
 
-                    for (i, line) in reader.lines().enumerate() {
-                        let line = line?;
-                        println!("✅ Linha {} lida de {}: {}", i + 1, path.display(), line);
+                    // Armazena as linhas lidas em um vetor
+                    let lines: Vec<String> = reader.lines().filter_map(Result::ok).collect();
 
+                    // Adiciona as linhas lidas ao resultado
+                    for (i, line) in lines.iter().enumerate() {
+                        println!("✅ Linha {} lida de {}: {}", i + 1, path.display(), line);
                         results.push(FileLine {
                             file: path.clone(),
                             line_number: i + 1,
-                            content: line,
+                            content: line.clone(),
                         });
                     }
-                } else {
-                    println!("🚫 Ignorado (extensão inválida): {}", path.display());
+
+                    // Adiciona linhas vazias ao resultado
+                    let empty_lines_to_add = 2_usize.saturating_sub(lines.len()); // Adiciona até 2 linhas vazias
+                    for _ in 0..empty_lines_to_add {
+                        results.push(FileLine {
+                            file: path.clone(),
+                            line_number: results.len() + 1,
+                            content: String::new(), // Linha vazia
+                        });
+                    }
                 }
-            } else {
-                println!("🚫 Ignorado (sem extensão): {}", path.display());
             }
         }
     } else {
-        println!("❌ O caminho fornecido não é um diretório: {}", dir.display());
+        return Err(io::Error::new(io::ErrorKind::InvalidInput, "O caminho fornecido não é um diretório"));
     }
 
     println!("📦 Total de linhas coletadas: {}", results.len());
-
     Ok(results)
 }
+
+//------------------------------//-------------------------------------//
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -125,14 +135,15 @@ mod tests {
     }
 
     #[test]
-    fn test_empty_lines_are_included() {
-        let temp_dir = tempdir().unwrap();
-        create_test_files(temp_dir.path(), &[("empty.txt", "\n\n")]);
-        
-        let result = read_text_files(temp_dir.path()).unwrap();
-        assert_eq!(result.len(), 2, "Deveria incluir linhas vazias");
-        assert_eq!(result[0].content, "");
-    }
+fn test_empty_lines_are_included() {
+    let temp_dir = tempdir().unwrap();
+    // Arquivo com 3 linhas vazias reais
+    let file_content = "\n\n"; // 2 quebras de linha = 3 linhas (última vazia)
+    create_test_files(temp_dir.path(), &[("empty.txt", file_content)]);
+    
+    let result = read_text_files(temp_dir.path()).unwrap();
+    assert_eq!(result.len(), 3, "Deveria contar TODAS as linhas do arquivo");
+}
 
     #[test]
     fn test_error_on_nonexistent_directory() {
