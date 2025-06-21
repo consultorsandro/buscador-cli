@@ -6,11 +6,11 @@ use clap::Parser;
 #[command(about = "Motor de busca simples para arquivos de texto", long_about = None)]
 pub struct Config {
     /// Diretório a ser indexado
-    #[arg(short, long)]
+    #[arg(short, long, default_value = ".")]
     pub dir: String,
 
     /// Palavra ou termo a buscar
-    #[arg(short, long)]
+    #[arg(short, long, default_value = "")]
     pub query: String,
 
     /// Sensível a maiúsculas/minúsculas?
