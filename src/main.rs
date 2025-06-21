@@ -2,7 +2,7 @@ mod config;
 mod indexer;
 
 use clap::Parser;
-use config::Coinfg;
+use config::Config;
 use indexer::read_text_files;
 use std::path::Path;
 use std::io::{self, Write};
