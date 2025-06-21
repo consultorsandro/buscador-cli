@@ -15,56 +15,40 @@ pub fn read_text_files(dir: &Path) -> io::Result<Vec<FileLine>> {
         return Err(io::Error::new(io::ErrorKind::NotFound, "Diretório não encontrado"));
     }
 
-    println!("🔍 Verificando diretório: {}", dir.display());
     let mut results = Vec::new();
 
     if dir.is_dir() {
         for entry in fs::read_dir(dir)? {
             let entry = entry?;
             let path = entry.path();
-            println!("➡️ Encontrado: {}", path.display());
 
             if path.is_dir() {
-                println!("📁 É um subdiretório. Entrando...");
+                // Processamento recursivo
                 let sub_results = read_text_files(&path)?;
                 results.extend(sub_results);
             } else if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
                 let ext = ext.to_lowercase();
+                // Filtrando apenas arquivos .txt e .md
                 if ext == "txt" || ext == "md" {
-                    println!("📄 Arquivo válido para leitura: {}", path.display());
                     let file = fs::File::open(&path)?;
                     let reader = io::BufReader::new(file);
 
-                    // Armazena as linhas lidas em um vetor
-                    let lines: Vec<String> = reader.lines().filter_map(Result::ok).collect();
-
-                    // Adiciona as linhas lidas ao resultado
-                    for (i, line) in lines.iter().enumerate() {
-                        println!("✅ Linha {} lida de {}: {}", i + 1, path.display(), line);
+                    // Lê todas as linhas do arquivo
+                    for (i, line) in reader.lines().enumerate() {
+                        let line = line?; // Captura a linha (pode ser vazia)
                         results.push(FileLine {
                             file: path.clone(),
                             line_number: i + 1,
-                            content: line.clone(),
+                            content: line,
                         });
                     }
-
-                    // Adiciona linhas vazias ao resultado
-                    let empty_lines_to_add = 2_usize.saturating_sub(lines.len()); // Adiciona até 2 linhas vazias
-                    for _ in 0..empty_lines_to_add {
-                        results.push(FileLine {
-                            file: path.clone(),
-                            line_number: results.len() + 1,
-                            content: String::new(), // Linha vazia
-                        });
-                    }
+                } else {
+                    println!("➡️ Ignorando arquivo não suportado: {}", path.display());
                 }
             }
         }
-    } else {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, "O caminho fornecido não é um diretório"));
     }
 
-    println!("📦 Total de linhas coletadas: {}", results.len());
     Ok(results)
 }
 
