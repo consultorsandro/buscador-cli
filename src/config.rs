@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::Parser; // Importa o parser do Clap para análise de argumentos de linha de comando
 
 /// Configuração da linha de comando
 #[derive(Parser, Debug)]
@@ -14,7 +14,7 @@ pub struct Config {
     pub query: String,
 
     /// Sensível a maiúsculas/minúsculas?
-    #[arg(long, default_value_t = false)]
+    #[arg(long, default_value_t = false)] // por padrão não é sensível a maiúsculas/minúsculas
     pub case_sensitive: bool,
 }
 

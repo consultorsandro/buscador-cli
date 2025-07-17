@@ -1,12 +1,12 @@
-use std::fs;
-use std::io::{self, BufRead};
-use std::path::{Path, PathBuf};
+use std::fs; // Para operações de sistema de arquivos
+use std::io::{self, BufRead}; // Para leitura de arquivos linha por linha
+use std::path::{Path, PathBuf}; // Para manipulação de caminhos de arquivos
 
-#[derive(Debug)]
-pub struct FileLine {
-    pub file: PathBuf,
-    pub line_number: usize,
-    pub content: String,
+#[derive(Debug)] // Permite imprimir a struct para depuração
+pub struct FileLine { // Esta struct armazena os metadados de cada linha lida dos arquivos.
+    pub file: PathBuf, // Caminho completo do arquivo
+    pub line_number: usize, // Número da linha (1-based)
+    pub content: String, // Conteúdo da linha
 }
 
 pub fn read_text_files(dir: &Path) -> io::Result<Vec<FileLine>> {
@@ -16,7 +16,7 @@ pub fn read_text_files(dir: &Path) -> io::Result<Vec<FileLine>> {
     }
 
     let mut results = Vec::new();
-
+    // Iteração sobre os arquivos
     if dir.is_dir() {
         for entry in fs::read_dir(dir)? {
             let entry = entry?;
@@ -27,7 +27,7 @@ pub fn read_text_files(dir: &Path) -> io::Result<Vec<FileLine>> {
                 let sub_results = read_text_files(&path)?;
                 results.extend(sub_results);
             } else if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
-                let ext = ext.to_lowercase();
+                let ext = ext.to_lowercase(); // Converte a extensão para minúsculas para comparação
                 // Filtrando apenas arquivos .txt e .md
                 if ext == "txt" || ext == "md" {
                     let file = fs::File::open(&path)?;
@@ -71,18 +71,18 @@ mod tests {
     }
 
     #[test]
-    fn test_read_empty_directory() {
+    fn test_read_empty_directory() { // Testa leitura de diretório vazio
         let temp_dir = tempdir().unwrap();
         let result = read_text_files(temp_dir.path()).unwrap();
         assert_eq!(result.len(), 0, "Deveria retornar vetor vazio para diretório vazio");
     }
 
     #[test]
-    fn test_read_single_text_file() {
+    fn test_read_single_text_file() { // Testa leitura de um único arquivo de texto
         let temp_dir = tempdir().unwrap();
-        create_test_files(temp_dir.path(), &[("test.txt", "linha 1\nlinha 2")]);
+        create_test_files(temp_dir.path(), &[("test.txt", "linha 1\nlinha 2")]); // Cria um arquivo de teste com duas linhas
         
-        let result = read_text_files(temp_dir.path()).unwrap();
+        let result = read_text_files(temp_dir.path()).unwrap(); // Lê os arquivos de texto
         assert_eq!(result.len(), 2, "Deveria ler todas as linhas do arquivo");
         
         assert_eq!(result[0].content, "linha 1");
@@ -106,7 +106,7 @@ mod tests {
     }
 
     #[test]
-    fn test_read_recursive_directories() {
+    fn test_read_recursive_directories() { // Testa leitura recursiva de diretórios
         let temp_dir = tempdir().unwrap();
         let sub_dir = temp_dir.path().join("subdir");
         fs::create_dir(&sub_dir).unwrap();
@@ -119,18 +119,18 @@ mod tests {
     }
 
     #[test]
-fn test_empty_lines_are_included() {
-    let temp_dir = tempdir().unwrap();
-    // Arquivo com 3 linhas vazias reais
-    let file_content = "\n\n"; // 2 quebras de linha = 3 linhas (última vazia)
-    create_test_files(temp_dir.path(), &[("empty.txt", file_content)]);
-    
-    let result = read_text_files(temp_dir.path()).unwrap();
-    assert_eq!(result.len(), 3, "Deveria contar TODAS as linhas do arquivo");
-}
+    fn test_empty_lines_are_included() {
+        let temp_dir = tempdir().unwrap();
+        // Arquivo com 3 linhas vazias reais
+        let file_content = "\n\n"; // 2 quebras de linha = 3 linhas (última vazia)
+        create_test_files(temp_dir.path(), &[("empty.txt", file_content)]);
+        
+        let result = read_text_files(temp_dir.path()).unwrap();
+        assert_eq!(result.len(), 3, "Deveria contar TODAS as linhas do arquivo");
+    }
 
     #[test]
-    fn test_error_on_nonexistent_directory() {
+    fn test_error_on_nonexistent_directory() { // Testa erro ao tentar ler diretório inexistente
         let temp_dir = tempdir().unwrap();
         let nonexistent_path = temp_dir.path().join("nonexistent");
         
@@ -139,12 +139,12 @@ fn test_empty_lines_are_included() {
     }
 
     #[test]
-    fn test_file_metadata_correct() {
-        let temp_dir = tempdir().unwrap();
-        create_test_files(temp_dir.path(), &[("meta.txt", "conteúdo")]);
-        
-        let result = read_text_files(temp_dir.path()).unwrap();
-        assert_eq!(result[0].file.file_name().unwrap(), "meta.txt");
-        assert_eq!(result[0].line_number, 1);
+        fn test_file_metadata_correct() {
+            let temp_dir = tempdir().unwrap();
+            create_test_files(temp_dir.path(), &[("meta.txt", "conteúdo")]);
+            
+            let result = read_text_files(temp_dir.path()).unwrap();
+            assert_eq!(result[0].file.file_name().unwrap(), "meta.txt");
+            assert_eq!(result[0].line_number, 1);
+        }
     }
-}

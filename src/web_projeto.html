@@ -1,0 +1,363 @@
+<!-- Removido o comentário de filepath para compatibilidade com navegadores -->
+<html>
+  <head>
+    <title>PEQUENA APLICAÇÃO DE BUSCA NA LINGUAGEM RUST</title>
+    <meta charset="utf-8"/>
+    <style>
+      body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        margin: 0;
+        background: #f9f9f9;
+        color: #222;
+      }
+      .container {
+        max-width: 900px;
+        margin: 2rem auto;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px #0001;
+        padding: 2rem;
+      }
+      h1, h2, h3 { color: #1a237e; }
+      pre {
+        background: #f5f5f5;
+        border-radius: 6px;
+        padding: 1em;
+        overflow-x: auto;
+      }
+      code { font-family: 'Fira Mono', 'Consolas', monospace; }
+      .badge {
+        display: inline-block;
+        background: #1976d2;
+        color: #fff;
+        border-radius: 5px;
+        padding: 0.2em 0.7em;
+        font-size: 0.95em;
+        margin-right: 0.5em;
+      }
+      .section { margin-bottom: 2.5em; }
+      .highlight {
+        background: #e3f2fd;
+        border-left: 4px solid #1976d2;
+        padding: 0.7em 1em;
+        margin: 1em 0;
+        border-radius: 5px;
+      }
+      .emoji { font-size: 1.2em; }
+      a { color: #1976d2; text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      ul { margin-left: 1.5em; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Título e Badges -->
+      <h1>🔎 Buscador CLI: Indexação e Busca Eficiente de Arquivos de Texto em Rust</h1>
+      <div>
+        <span class="badge">Rust 🦀</span>
+        <span class="badge">CLI</span>
+        <span class="badge">Indexação Recursiva</span>
+        <span class="badge">Testes Automatizados</span>
+      </div>
+     
+      <!-- Introdução -->
+      <div class="section">
+        <h2>1. Introdução</h2>
+        <div class="highlight">
+          <p>
+            <b>Buscador CLI</b> é uma aplicação de linha de comando desenvolvida em Rust 🦀 para indexação rápida e busca eficiente de arquivos de texto (<code>.txt</code>, <code>.md</code>) em diretórios locais. Permite buscas por palavras ou frases, com opção de busca sensível a maiúsculas/minúsculas, exibindo o resultado de forma clara e detalhada.
+          </p>
+          <ul>
+            <li>✅ Indexação automática de arquivos de texto (busca recursiva)</li>
+            <li>✅ Busca rápida por palavras ou frases completas</li>
+            <li>✅ Exibe nome do arquivo, número da linha e conteúdo</li>
+            <li>✅ Suporte opcional a <b>Case Sensitive</b></li>
+            <li>✅ Interface amigável no terminal</li>
+            <li>✅ Inclui testes automatizados unitários, de integração e performance</li>
+          </ul>
+          <p><b>Nível técnico:</b> Intermediário em Rust.</p>
+        </div>
+      </div>
+
+      <!-- Justificativa Didática -->
+      <div class="section">
+        <h2>2. Justificativa Didática</h2>
+        <p>
+          Desenvolver uma aplicação de busca de arquivos em Rust é um excelente exercício para quem está aprendendo a linguagem, pois envolve conceitos fundamentais como manipulação de arquivos, recursão, tratamento de erros, uso de crates externos e testes automatizados.
+        </p>
+        <ul>
+          <li><b>Por que é necessário?</b> Permite praticar leitura e escrita de arquivos, navegação em diretórios, uso de structs e enums, além de integração com bibliotecas da comunidade (como <code>clap</code>).</li>
+          <li><b>Vantagens gerais:</b>
+            <ul>
+              <li>Organização modular do código</li>
+              <li>Facilidade de manutenção e extensão</li>
+              <li>Testabilidade e robustez</li>
+            </ul>
+          </li>
+          <li><b>Ganho técnico:</b>
+            <ul>
+              <li>Implementação recursiva e robusta para indexação de arquivos, com tratamento de erros idiomático usando <code>Result</code> e <code>?</code>.</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Arquitetura da Solução -->
+      <div class="section">
+        <h2>3. Arquitetura e Design da Solução</h2>
+        <p>
+          A aplicação é dividida em três módulos principais:
+        </p>
+        <ul>
+          <li><b>main.rs</b>: Ponto de entrada, orquestra a execução e interação com o usuário.</li>
+          <li><b>config.rs</b>: Responsável pelo parsing dos argumentos de linha de comando usando <code>clap</code>.</li>
+          <li><b>indexer.rs</b>: Faz a leitura, indexação e filtragem dos arquivos de texto.</li>
+        </ul>
+        <p><b>Aplicação dos princípios SOLID:</b>
+          <ul>
+            <li><b>Single Responsibility:</b> Cada módulo tem uma responsabilidade clara (configuração, indexação, execução principal).</li>
+            <li><b>Open/Closed:</b> Fácil de estender para novos tipos de arquivos ou filtros sem alterar o núcleo.</li>
+            <li><b>Dependency Inversion:</b> Uso de crates externos desacoplados (<code>clap</code>, <code>tempfile</code> para testes).</li>
+          </ul>
+        </p>
+        <p>
+          O projeto suporta diferentes formas de utilização: busca em arquivos, diretórios e subdiretórios, com filtros flexíveis.
+        </p>
+      </div>
+
+      <!-- Implementação Detalhada: indexer.rs -->
+      <div class="section">
+        <h2>4. Implementação Detalhada</h2>
+        <h3>4.1 Módulo <code>indexer</code></h3>
+        <ul>
+          <li><b>Estrutura principal:</b> Define a struct <code>FileLine</code> para armazenar metadados de cada linha lida.</li>
+          <li><b>Importações:</b> <code>std::fs</code>, <code>std::io</code>, <code>std::path</code> para manipulação de arquivos e diretórios.</li>
+          <li><b>Dependências:</b> <code>tempfile</code> para testes automatizados.</li>
+          <li><b>Função principal:</b> <code>read_text_files</code> faz a leitura recursiva dos arquivos, filtrando apenas <code>.txt</code> e <code>.md</code>, e retorna um vetor de <code>FileLine</code>.</li>
+        </ul>
+        <div class="highlight">
+          <b>Melhorias e Estratégias:</b>
+          <ul>
+            <li><b>Filtro Correto de Extensões:</b> Apenas arquivos <code>.txt</code> e <code>.md</code> são processados.</li>
+            <li><b>Contagem Precisa de Linhas:</b> Todas as linhas, inclusive vazias, são lidas corretamente.</li>
+            <li><b>Tratamento de Erros:</b> Uso do operador <code>?</code> para propagação imediata de erros e verificação da existência do diretório.</li>
+            <li><b>Recursão Confiável:</b> Subdiretórios são processados de forma recursiva e segura.</li>
+          </ul>
+        </div>
+        <h4>Exemplo de código (<code>src/indexer.rs</code>):</h4>
+        <pre><code>use std::fs;
+use std::io::{self, BufRead};
+use std::path::{Path, PathBuf};
+
+#[derive(Debug)]
+pub struct FileLine {
+    pub file: PathBuf,
+    pub line_number: usize,
+    pub content: String,
+}
+
+pub fn read_text_files(dir: &Path) -> io::Result&lt;Vec&lt;FileLine&gt;&gt; {
+    if !dir.exists() {
+        return Err(io::Error::new(io::ErrorKind::NotFound, "Diretório não encontrado"));
+    }
+    let mut results = Vec::new();
+    if dir.is_dir() {
+        for entry in fs::read_dir(dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_dir() {
+                let sub_results = read_text_files(&path)?;
+                results.extend(sub_results);
+            } else if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+                let ext = ext.to_lowercase();
+                if ext == "txt" || ext == "md" {
+                    let file = fs::File::open(&path)?;
+                    let reader = io::BufReader::new(file);
+                    for (i, line) in reader.lines().enumerate() {
+                        let line = line?;
+                        results.push(FileLine {
+                            file: path.clone(),
+                            line_number: i + 1,
+                            content: line,
+                        });
+                    }
+                } else {
+                    println!("➡️ Ignorando arquivo não suportado: {}", path.display());
+                }
+            }
+        }
+    }
+    Ok(results)
+}
+</code></pre>
+      </div>
+
+      <!-- Implementação Detalhada: config.rs -->
+      <div class="section">
+        <h3>4.2 Módulo <code>config</code></h3>
+        <ul>
+          <li><b>Uso da biblioteca <code>clap</code>:</b> Facilita o parsing de argumentos de linha de comando, tornando a interface mais amigável e robusta.</li>
+          <li><b>Resumo:</b>
+            <ul>
+              <li>Define a configuração do programa (<code>Config</code>).</li>
+              <li>Permite ao usuário especificar diretório, termo de busca e sensibilidade a maiúsculas/minúsculas.</li>
+              <li>Valores padrão tornam o programa fácil de usar mesmo sem argumentos.</li>
+            </ul>
+          </li>
+          <li><b>Ponto de atenção:</b> Sensibilidade a maiúsculas/minúsculas pode ser crucial dependendo do contexto.</li>
+        </ul>
+        <h4>Exemplo de código (<code>src/config.rs</code>):</h4>
+        <pre><code>use clap::Parser;
+
+/// Configuração da linha de comando
+#[derive(Parser, Debug)]
+#[command(name = "buscador")]
+#[command(about = "Motor de busca simples para arquivos de texto", long_about = None)]
+pub struct Config {
+    /// Diretório a ser indexado
+    #[arg(short, long, default_value = ".")]
+    pub dir: String,
+
+    /// Palavra ou termo a buscar
+    #[arg(short, long, default_value = "")]
+    pub query: String,
+
+    /// Sensível a maiúsculas/minúsculas?
+    #[arg(long, default_value_t = false)]
+    pub case_sensitive: bool,
+}
+</code></pre>
+      </div>
+
+      <!-- Implementação Detalhada: main.rs -->
+      <div class="section">
+        <h3>4.3 Arquivo <code>main.rs</code></h3>
+        <ul>
+          <li><b>Importações:</b> <code>clap</code>, módulos internos (<code>config</code>, <code>indexer</code>), <code>std::io</code> e <code>std::path</code>.</li>
+          <li><b>Resumo de funcionamento:</b>
+            <ol>
+              <li>Exibe mensagem de boas-vindas.</li>
+              <li>Analisa argumentos da linha de comando.</li>
+              <li>Solicita termo de busca se não informado.</li>
+              <li>Exibe informações do diretório e busca.</li>
+              <li>Filtra linhas com base no termo de busca.</li>
+              <li>Exibe resultados ou mensagem de erro.</li>
+            </ol>
+          </li>
+        </ul>
+        <h4>Exemplo de código (<code>src/main.rs</code>):</h4>
+        <pre><code>mod config;
+mod indexer;
+use clap::Parser;
+use config::Config;
+use indexer::read_text_files;
+use std::path::Path;
+use std::io::{self, Write};
+
+fn main() {
+    println!("👋 Bem-vindo ao Buscador CLI! 🚀");
+    let mut args = Config::parse();
+
+    if args.query.is_empty() {
+        print!("Por favor, digite o termo de busca: ");
+        io::stdout().flush().unwrap();
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).unwrap();
+        args.query = input.trim().to_string();
+        if args.query.is_empty() {
+            eprintln!("⚠️  Nenhum termo de busca informado. Encerrando o programa.");
+            std::process::exit(1);
+        }
+    }
+
+    println!("📁 Diretório: {}", args.dir);
+    println!("🔍 Termo: {}", args.query);
+    println!("🔠 Case sensitive: {}", args.case_sensitive);
+
+    let path = Path::new(&args.dir);
+    match read_text_files(path) {
+        Ok(lines) => {
+            println!("📄 {} linhas lidas para indexação", lines.len());
+            let termo = &args.query;
+            let case_sensitive = args.case_sensitive;
+            let resultados: Vec<_> = lines
+                .into_iter()
+                .filter(|line| {
+                    if case_sensitive {
+                        line.content.contains(termo)
+                    } else {
+                        line.content.to_lowercase().contains(&termo.to_lowercase())
+                    }
+                })
+                .collect();
+            if resultados.is_empty() {
+                println!("🔎 Nenhum resultado encontrado para \"{}\".", termo);
+            } else {
+                println!("✅ {} resultados encontrados:", resultados.len());
+                for line in resultados.iter().take(15) {
+                    println!(
+                        "{}:{} -> {}",
+                        line.file.display(),
+                        line.line_number,
+                        line.content
+                    );
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("❌ Erro ao ler arquivos: {}", e);
+        }
+    }
+}
+</code></pre>
+      </div>
+
+      <!-- Testes -->
+      <div class="section">
+        <h2>5. Testes Automatizados</h2>
+        <p>
+          O projeto inclui testes unitários, de integração e de performance, garantindo robustez e confiabilidade. Para detalhes e demonstrações, acesse:
+          <ul>
+            <li>Canal Youtube: <a href="https://www.youtube.com/@veteranoedev" target="_blank">Veterano e Dev</a></li>
+            <li>Vídeo específico: <a href="https://youtu.be/1giv8YchRR4?si=Cgdcy8MSPLfyWoDz" target="_blank">Testes no Buscador CLI</a></li>
+          </ul>
+        </p>
+      </div>
+
+      <!-- Benchmark -->
+      <div class="section">
+        <h2>6. Benchmark: Rust vs Java</h2>
+        <ul>
+          <li><b>Performance:</b> Rust compila para código nativo, oferecendo desempenho superior e uso eficiente de memória em comparação com Java, que depende da JVM.</li>
+          <li><b>Segurança:</b> O sistema de tipos e o borrow checker de Rust previnem erros comuns de concorrência e acesso à memória, reduzindo bugs em aplicações de busca intensiva.</li>
+        </ul>
+      </div>
+
+      <!-- Considerações Finais -->
+      <div class="section">
+        <h2>7. Considerações Finais</h2>
+        <ul>
+          <li><b>Lições aprendidas:</b> Modularização, uso de crates externos, testes automatizados e boas práticas de tratamento de erros são essenciais para aplicações robustas em Rust.</li>
+          <li><b>Limitações:</b> A busca recursiva pode ser custosa em diretórios muito grandes. Não há suporte a buscas paralelas ou indexação incremental.</li>
+          <li><b>Melhorias possíveis:</b>
+            <ul>
+              <li>Adicionar busca paralela para maior performance.</li>
+              <li>Implementar cache de indexação para grandes volumes de dados.</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Referências -->
+      <div class="section">
+        <h2>8. Referências</h2>
+        <ul>
+          <li>Autor: Sandro Reis (com apoio de prompts de IA)</li>
+          <li>Repositório: <a href="https://github.com/consultorsandro/buscador-cli.git" target="_blank">github.com/consultorsandro/buscador-cli.git</a></li>
+          <li>Documentação Rust: <a href="https://doc.rust-lang.org/book/" target="_blank">doc.rust-lang.org/book/</a></li>
+          <li>Canal Youtube: <a href="https://www.youtube.com/@veteranoedev" target="_blank">Veterano e Dev</a></li>
+        </ul>
+      </div>
+    </div>
+  </body>
+</html>

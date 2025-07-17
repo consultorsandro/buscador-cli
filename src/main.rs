@@ -1,73 +1,74 @@
 mod config;
 mod indexer;
 
-use clap::Parser;
-use config::Config;
 use indexer::read_text_files;
 use std::path::Path;
-use std::io::{self, Write};
 
-fn main() {
-    println!("👋 Bem-vindo ao Buscador CLI! 🚀");
-    let mut args = Config::parse();
+slint::include_modules!();
 
-    if args.query.is_empty() {
-        print!("Por favor, digite o termo de busca: ");
-        io::stdout().flush().unwrap();
-        let mut input = String::new();
-        io::stdin().read_line(&mut input).unwrap();
-        args.query = input.trim().to_string();
-
-        if args.query.is_empty() {
-            eprintln!("⚠️  Nenhum termo de busca informado. Encerrando o programa.");
-            std::process::exit(1);
+fn main() -> Result<(), slint::PlatformError> {
+    let ui = AppWindow::new()?;
+    
+    // Clone para usar nos callbacks
+    let ui_weak = ui.as_weak();
+    
+    // Callback para buscar
+    ui.on_search_clicked(move || {
+        let ui = ui_weak.unwrap();
+        let search_term = ui.get_search_term().to_string();
+        let directory = ui.get_directory().to_string();
+        let case_sensitive = ui.get_case_sensitive();
+        
+        if search_term.is_empty() {
+            ui.set_status_message("⚠️ Digite um termo de busca".into());
+            return;
         }
-    }
-
-    println!("📁 Diretório: {}", args.dir);
-    println!("🔍 Termo: {}", args.query);
-    println!("🔠 Case sensitive: {}", args.case_sensitive);
-
-    let path = Path::new(&args.dir);
-
-        // ...código existente...
-    
-        match read_text_files(path) {
-            Ok(lines) => {
-                println!("📄 {} linhas lidas para indexação", lines.len());
-    
-                let termo = &args.query;
-                let case_sensitive = args.case_sensitive;
-    
-                let resultados: Vec<_> = lines
+        
+        ui.set_status_message("🔄 Buscando...".into());
+        
+        // Realizar busca
+        match perform_search(&directory, &search_term, case_sensitive) {
+            Ok(results) => {
+                let result_strings: Vec<slint::SharedString> = results
                     .into_iter()
-                    .filter(|line| {
-                        if case_sensitive {
-                            line.content.contains(termo)
-                        } else {
-                            line.content.to_lowercase().contains(&termo.to_lowercase())
-                        }
-                    })
+                    .map(|r| format!("{}:{} -> {}", r.file.display(), r.line_number, r.content).into())
                     .collect();
-    
-                if resultados.is_empty() {
-                    println!("🔎 Nenhum resultado encontrado para \"{}\".", termo);
-                } else {
-                    println!("✅ {} resultados encontrados:", resultados.len());
-                    for line in resultados.iter().take(15) {
-                        println!(
-                            "{}:{} -> {}",
-                            line.file.display(),
-                            line.line_number,
-                            line.content
-                        );
-                    }
-                }
+                
+                ui.set_results(slint::ModelRc::from(result_strings.as_slice()));
+                ui.set_status_message(format!("✅ {} resultados encontrados", result_strings.len()).into());
             }
             Err(e) => {
-                eprintln!("❌ Erro ao ler arquivos: {}", e);
+                ui.set_status_message(format!("❌ Erro: {}", e).into());
             }
         }
-    }
-    // ...código existente...
-   
+    });
+    
+    // Callback para limpar
+    let ui_weak = ui.as_weak();
+    ui.on_clear_clicked(move || {
+        let ui = ui_weak.unwrap();
+        ui.set_search_term("".into());
+        ui.set_results(Default::default());
+        ui.set_status_message("Pronto para buscar".into());
+    });
+    
+    ui.run()
+}
+
+fn perform_search(directory: &str, search_term: &str, case_sensitive: bool) -> Result<Vec<indexer::FileLine>, Box<dyn std::error::Error>> {
+    let path = Path::new(directory);
+    let lines = read_text_files(path)?;
+    
+    let results: Vec<_> = lines
+        .into_iter()
+        .filter(|line| {
+            if case_sensitive {
+                line.content.contains(search_term)
+            } else {
+                line.content.to_lowercase().contains(&search_term.to_lowercase())
+            }
+        })
+        .collect();
+    
+    Ok(results)
+}

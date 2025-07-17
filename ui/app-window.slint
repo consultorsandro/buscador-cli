@@ -1,0 +1,103 @@
+import { Button, LineEdit, ListView, GroupBox, CheckBox } from "std-widgets.slint";
+
+export component AppWindow inherits Window {
+    width: 800px;
+    height: 600px;
+    title: "🔍 Buscador CLI - Interface Gráfica";
+
+    in-out property <string> search-term;
+    in-out property <string> directory: ".";
+    in-out property <bool> case-sensitive: false;
+    in-out property <[string]> results: [];
+    in-out property <string> status-message: "Pronto para buscar";
+
+    callback search-clicked();
+    callback clear-clicked();
+
+    VerticalLayout {
+        padding: 20px;
+        spacing: 15px;
+
+        // Header
+        Text {
+            text: "👋 Bem-vindo ao Buscador CLI! 🚀";
+            font-size: 24px;
+            font-weight: 700;
+            color: #2563eb;
+            horizontal-alignment: center;
+        }
+
+        // Search Controls
+        GroupBox {
+            title: "🔧 Configurações de Busca";
+            
+            VerticalLayout {
+                spacing: 10px;
+
+                // Directory input
+                HorizontalLayout {
+                    Text { text: "📁 Diretório:"; width: 100px; }
+                    LineEdit {
+                        text <=> root.directory;
+                        placeholder-text: "Digite o caminho do diretório...";
+                    }
+                }
+
+                // Search term input
+                HorizontalLayout {
+                    Text { text: "🔍 Termo:"; width: 100px; }
+                    LineEdit {
+                        text <=> root.search-term;
+                        placeholder-text: "Digite o termo de busca...";
+                    }
+                }
+
+                // Case sensitive checkbox
+                HorizontalLayout {
+                    CheckBox {
+                        checked <=> root.case-sensitive;
+                        text: "🔠 Case sensitive";
+                    }
+                }
+
+                // Buttons
+                HorizontalLayout {
+                    spacing: 10px;
+                    
+                    Button {
+                        text: "🔍 Buscar";
+                        primary: true;
+                        clicked => { root.search-clicked(); }
+                        enabled: root.search-term != "";
+                    }
+                    
+                    Button {
+                        text: "🗑️ Limpar";
+                        clicked => { root.clear-clicked(); }
+                    }
+                }
+            }
+        }
+
+        // Status
+        Text {
+            text: root.status-message;
+            font-size: 14px;
+            color: #059669;
+        }
+
+        // Results
+        GroupBox {
+            title: "📄 Resultados";
+            
+            ListView {
+                for result in root.results: Text {
+                    text: result;
+                    font-family: "monospace";
+                    font-size: 12px;
+                    wrap: word-wrap;
+                }
+            }
+        }
+    }
+}
